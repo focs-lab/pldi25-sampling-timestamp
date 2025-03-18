@@ -11,9 +11,9 @@ warmup: 60
 terminals: 3
 
 builds:
-- st-03
-- su-03
-- so-03
+- st-report-03
+- su-report-03
+- so-report-03
 
 warmup-run-duration: 0
 warmup-run-mysql-build: nt

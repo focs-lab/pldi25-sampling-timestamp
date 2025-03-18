@@ -36,9 +36,10 @@ COPY build-scripts/5-demos ./5-demos
 RUN 5-demos/0-deps.sh
 RUN 5-demos/1-setup.sh
 
-ENV WORKDIR=
-
 RUN chown -R experiment:experiment /home/experiment/demos
+RUN echo "root:root" | chpasswd
+
+ENV WORKDIR=
 
 USER experiment
 WORKDIR /home/experiment

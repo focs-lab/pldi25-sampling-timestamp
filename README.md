@@ -13,15 +13,34 @@ This section contains instructions for setting up the container and trying out a
 ### Setup Docker
 
 First, [install Docker](https://docs.docker.com/get-started/get-docker/).
+There are two ways of getting the Docker image.
 
-Then, load and run the Docker image with a shell open.
+#### Docker Hub
+
+You may pull it from Docker Hub.
+
+```sh
+docker pull dwslim2/sampling-timestamp
+```
+
+#### Zenodo
+
+Or you may download it from Zenodo (TODO: add link), then load it with the following command.
 
 ```sh
 docker load sampling-timestamp.tar.gz
-docker run sampling-timestamp -it bash
 ```
 
-(You may need to run the commands above with `sudo`.)
+### Open a shell in the Docker container
+
+After pulling/loading the image, we can now start the container and open a shell to interact with it.
+
+```sh
+docker run -it sampling-timestamp bash
+```
+
+(You may need to run all the commands above with `sudo`.)
+
 
 ### Demo experiments
 
@@ -76,6 +95,12 @@ The number of races reported is stored in a file whose name starts with the time
 
 For example, tatp/st-03/*.log will contain the number of data races that was detected by the ST-0.3% configuration.
 
+To easily get the results, you may run the following one-liner.
+
+```
+grep warnings tatp/*/*.log
+```
+
 
 #### Demo Experiment 3: Profiling
 
@@ -98,6 +123,12 @@ The profiling results are stored in a file whose name starts with the time of th
 In the results, you can find counters such as number of locks or number of accesses encountered.
 In the results for SU, you can also find the number of acquires encountered (`[UCLOCKS] Num original acquires`) and the number of acquires that our implementation needed to process (`[UCLOCKS] Num uclock acquires`). This lets us compute the ratio between amount of work "seen" vs amount of work "actually done". Notice that our algorithm only needed to process around 50% of the acquires encountered.
 Likewise, in the results for SO, you can also find the number of acquires encountered (`[OL] Num acquires`) and the number of linked-list traversals taken (`[OL] Num acquire ll traverses`). Notice that only a small number of linked-list traversals is needed per acquire that is encountered.
+
+
+### Troubleshooting
+
+If you stop the experiment by pressing Ctrl+C, the processes `mysqld` and `benchbase.jar` might not be terminated properly.
+You can just enter `kill -9 $(pidof mysqld java)` to kill them before starting the next experiment.
 
 
 ## For advanced users
@@ -183,8 +214,31 @@ The purposes of each of the fields above are as given below:
 - `warmup-run-mysql-build`: MySQL build for that extra warmup run. Since the results should not matter, perhaps choose the fastest build so that it can achieve the best "warming up" effect.
 - `benchmarks`: Benchmarks to run the experiment on. The available list of benchmarks are in the sample config above.
 
+The available builds in this container are:
+- `nt`: No TSan
+- `t`: Unmodified TSan without race reporting
+- `t-report`: Unmodified TSan with race reporting
+- `e`: Empty. Does not handle any events (read/write/acquire/release) at all.
+- `st-03`/`su-03`/`so-03`: ST/SU/SO with 0.3% sampling rate, **without profiling, without race reporting**
+- `st-3`/`su-3`/`so-3`: ST/SU/SO with 3% sampling rate, **without profiling, without race reporting**
+- `st-10`/`su-10`/`so-10`: ST/SU/SO with 10% sampling rate, **without profiling, without race reporting**
+- `st-prof-03`/`su-prof-03`/`so-prof-03`: ST/SU/SO with 0.3% sampling rate, **with profiling**, without race reporting
+- `st-prof-3`/`su-prof-3`/`so-prof-3`: ST/SU/SO with 3% sampling rate, **with profiling**, without race reporting
+- `st-prof-10`/`su-prof-10`/`so-prof-10`: ST/SU/SO with 10% sampling rate, **with profiling**, without race reporting
+- `st-report-03`/`su-report-03`/`so-report-03`: ST/SU/SO with 0.3% sampling rate, without profiling, **with race reporting**
+- `st-report-3`/`su-report-3`/`so-report-3`: ST/SU/SO with 3% sampling rate, without profiling, **with race reporting**
+- `st-report-10`/`su-report-10`/`so-report-10`: ST/SU/SO with 10% sampling rate, without profiling, **with race reporting**
+
 Finally, use `setup-experiment` to generate all the experiment configuration files and scripts.
 
 ```
 setup-experiment <path to experiment folder>
 ```
+
+
+### Build your own MySQL
+
+This subsection is for researchers who have modified TSan and want to compare their implementation against ours.
+
+TODO
+
