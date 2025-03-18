@@ -1,0 +1,139 @@
+diff --git a/src/main/java/com/oltpbenchmark/BenchmarkState.java b/src/main/java/com/oltpbenchmark/BenchmarkState.java
+index 8c5cb91..256b3ff 100644
+--- a/src/main/java/com/oltpbenchmark/BenchmarkState.java
++++ b/src/main/java/com/oltpbenchmark/BenchmarkState.java
+@@ -106,11 +106,11 @@ public final class BenchmarkState {
+     if (LOG.isDebugEnabled()) {
+       LOG.debug(String.format("%d workers are not done. Waiting until they finish", current));
+     }
+-    if (current == 0) {
+-      // We are the last thread to notice that we are done: wake any
+-      // blocked workers
+-      this.state = State.EXIT;
+-    }
++    // if (current == 0) {
++    // We are the last thread to notice that we are done: wake any
++    // blocked workers
++    this.state = State.EXIT;
++    // }
+     return current;
+   }
+ }
+diff --git a/src/main/java/com/oltpbenchmark/DBWorkload.java b/src/main/java/com/oltpbenchmark/DBWorkload.java
+index 11ab05c..02863fd 100644
+--- a/src/main/java/com/oltpbenchmark/DBWorkload.java
++++ b/src/main/java/com/oltpbenchmark/DBWorkload.java
+@@ -584,6 +584,7 @@ public class DBWorkload {
+     } else {
+       LOG.info("Skipping benchmark workload execution");
+     }
++    System.exit(0);
+   }
+ 
+   private static Options buildOptions(XMLConfiguration pluginConfig) {
+@@ -715,17 +716,18 @@ public class DBWorkload {
+ 
+     int windowSize = Integer.parseInt(argsLine.getOptionValue("s", "5"));
+ 
+-    String rawFileName = baseFileName + ".raw.csv";
+-    try (PrintStream ps = new PrintStream(FileUtil.joinPath(outputDirectory, rawFileName))) {
+-      LOG.info("Output Raw data into file: {}", rawFileName);
+-      rw.writeRaw(activeTXTypes, ps);
+-    }
++    //    String rawFileName = baseFileName + ".raw.csv";
++    //    try (PrintStream ps = new PrintStream(FileUtil.joinPath(outputDirectory, rawFileName))) {
++    //      LOG.info("Output Raw data into file: {}", rawFileName);
++    //      rw.writeRaw(activeTXTypes, ps);
++    //    }
+ 
+-    String sampleFileName = baseFileName + ".samples.csv";
+-    try (PrintStream ps = new PrintStream(FileUtil.joinPath(outputDirectory, sampleFileName))) {
+-      LOG.info("Output samples into file: {}", sampleFileName);
+-      rw.writeSamples(ps);
+-    }
++    //    String sampleFileName = baseFileName + ".samples.csv";
++    //    try (PrintStream ps = new PrintStream(FileUtil.joinPath(outputDirectory, sampleFileName)))
++    // {
++    //      LOG.info("Output samples into file: {}", sampleFileName);
++    //      rw.writeSamples(ps);
++    //    }
+ 
+     String summaryFileName = baseFileName + ".summary.json";
+     try (PrintStream ps = new PrintStream(FileUtil.joinPath(outputDirectory, summaryFileName))) {
+@@ -753,18 +755,20 @@ public class DBWorkload {
+       rw.writeConfig(ps);
+     }
+ 
+-    String resultsFileName = baseFileName + ".results.csv";
+-    try (PrintStream ps = new PrintStream(FileUtil.joinPath(outputDirectory, resultsFileName))) {
+-      LOG.info("Output results into file: {} with window size {}", resultsFileName, windowSize);
+-      rw.writeResults(windowSize, ps);
+-    }
+-
+-    for (TransactionType t : activeTXTypes) {
+-      String fileName = baseFileName + ".results." + t.getName() + ".csv";
+-      try (PrintStream ps = new PrintStream(FileUtil.joinPath(outputDirectory, fileName))) {
+-        rw.writeResults(windowSize, ps, t);
+-      }
+-    }
++    //    String resultsFileName = baseFileName + ".results.csv";
++    //    try (PrintStream ps = new PrintStream(FileUtil.joinPath(outputDirectory,
++    // resultsFileName))) {
++    //      LOG.info("Output results into file: {} with window size {}", resultsFileName,
++    // windowSize);
++    //      rw.writeResults(windowSize, ps);
++    //    }
++
++    //    for (TransactionType t : activeTXTypes) {
++    //      String fileName = baseFileName + ".results." + t.getName() + ".csv";
++    //      try (PrintStream ps = new PrintStream(FileUtil.joinPath(outputDirectory, fileName))) {
++    //        rw.writeResults(windowSize, ps, t);
++    //      }
++    //    }
+   }
+ 
+   private static void runCreator(BenchmarkModule bench) throws SQLException, IOException {
+diff --git a/src/main/java/com/oltpbenchmark/ThreadBench.java b/src/main/java/com/oltpbenchmark/ThreadBench.java
+index 4f1cb93..f95dcb6 100644
+--- a/src/main/java/com/oltpbenchmark/ThreadBench.java
++++ b/src/main/java/com/oltpbenchmark/ThreadBench.java
+@@ -90,7 +90,7 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
+ 
+       // FIXME not sure this is the best solution... ensure we don't hang
+       // forever, however we might ignore problems
+-      workerThreads.get(i).join(60000); // wait for 60second for threads
++      workerThreads.get(i).join(2000); // wait for 60second for threads
+       // to terminate... hands otherwise
+ 
+       /*
+@@ -103,7 +103,7 @@ public class ThreadBench implements Thread.UncaughtExceptionHandler {
+ 
+       LOG.debug("threadbench calling teardown");
+ 
+-      workers.get(i).tearDown();
++      // workers.get(i).tearDown();
+     }
+ 
+     return requests;
+diff --git a/src/main/resources/benchmarks/auctionmark/ddl-mysql.sql b/src/main/resources/benchmarks/auctionmark/ddl-mysql.sql
+index 110bfdf..e28f943 100644
+--- a/src/main/resources/benchmarks/auctionmark/ddl-mysql.sql
++++ b/src/main/resources/benchmarks/auctionmark/ddl-mysql.sql
+@@ -215,8 +215,8 @@ CREATE TABLE item (
+     i_num_images       bigint,
+     i_num_global_attrs bigint,
+     i_num_comments     bigint,
+-    i_start_date       timestamp    DEFAULT '1970-01-01 00:00:01',
+-    i_end_date         timestamp    DEFAULT '1970-01-01 00:00:01',
++    i_start_date       timestamp    DEFAULT '2000-01-01 00:00:01',
++    i_end_date         timestamp    DEFAULT '2000-01-01 00:00:01',
+     i_status           int          DEFAULT 0,
+     i_created          timestamp    DEFAULT CURRENT_TIMESTAMP,
+     i_updated          timestamp    DEFAULT CURRENT_TIMESTAMP,
+@@ -423,4 +423,4 @@ CREATE TABLE useracct_watch (
+ );
+ 
+ SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
+-SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+\ No newline at end of file
++SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;

@@ -1,0 +1,21 @@
+benchbase: /usr/local/experiment/benchbase
+mysql: /usr/local/experiment/mysql-server-mysql-8.0.39
+mysql-dist-no-tsan: dist-nt
+workspace: /tmp/workspace
+symbolizer: /usr/local/experiment/llvm-project/build/bin/llvm-symbolizer
+seed: 1234
+report-bugs: 0
+
+duration: 240
+warmup: 60
+terminals: 3
+
+builds:
+- su-prof-03
+- so-prof-03
+
+warmup-run-duration: 0
+warmup-run-mysql-build: nt
+
+benchmarks:
+- epinions
