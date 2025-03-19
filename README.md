@@ -308,10 +308,10 @@ build sampling-timestamp-E dist-e
 
 All you need to do is:
 1. Tag your changes with `git tag` and push it to GitHub (can be to your own fork). For example,
-  * https://github.com/focs-lab/llvm-project/tree/sampling-timestamp-SU-0.3
-  * https://github.com/focs-lab/llvm-project/tree/sampling-timestamp-E
+    * https://github.com/focs-lab/llvm-project/tree/sampling-timestamp-SU-0.3
+    * https://github.com/focs-lab/llvm-project/tree/sampling-timestamp-E
 2. Make sure that the local llvm-project repository knows about your git tags. You will need to add your llvm-project fork as a remote:
-  * `git remote add <pick a name> <url of your fork>`
+    * `git remote add <pick a name> <url of your fork>`
 3. Modify the script above to call `build <your tag> <where to install>`.
 4. Run the script.
 
@@ -322,16 +322,16 @@ For example, consider the scenario where I modified TSan with a new implementati
 Below are the steps to build MySQL with it.
 
 1. Switch to `root` user.
-  * `su - root` (password is `root`)
+    * `su - root` (password is `root`)
 2. Add my fork to the local llvm-project repository.
-  * `cd /usr/local/experiment/llvm-project`
-  * `git remote add daniel https://github.com/dwslim/llvm-project.git`
+    * `cd /usr/local/experiment/llvm-project`
+    * `git remote add daniel https://github.com/dwslim/llvm-project.git`
 3. Modify the script:
-  * `vim /usr/local/experiments/2-mysql/5-build-all.sh`
-  * Remove the existing `build` commands.
-  * Add `build daniel-fast dist-daniel-fast`.
+    * `vim /usr/local/experiments/2-mysql/5-build-all.sh`
+    * Remove the existing `build` commands.
+    * Add `build daniel-fast dist-daniel-fast`.
 4. Run the script.
-  * `/usr/local/experiments/2-mysql/5-build-all.sh`
+    * `/usr/local/experiments/2-mysql/5-build-all.sh`
 
 
 ### Using the container like a virtual machine
