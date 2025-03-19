@@ -1,6 +1,6 @@
 # Artifacts for PLDI25 Paper "Efficient Timestamping for Sampling-based Race Detection"
 
-This artifact contains the experiment setup used for evaluating our work in improving the efficiency of data race detection through the use of the sampling timestamp proposed in our paper.
+This artifact contains the experiment setup used for evaluating our work in improving the efficiency of data race detectors through the use of the sampling timestamp proposed in our paper.
 
 In this experiment setup, LLVM is used to build MySQL with ThreadSanitizer, whose performance is then measured with [BenchBase](https://github.com/cmu-db/benchbase).
 All of the necessary programs and scripts have been packaged in a Docker container, so that any researcher who is interested to reproduce or extend this work can easily do so.
@@ -25,7 +25,7 @@ docker pull dwslim2/sampling-timestamp
 
 #### Zenodo
 
-Or you may download it from Zenodo (TODO: add link), then load it with the following command.
+Or you may download it from Zenodo, then load it with the following command.
 
 ```sh
 docker load sampling-timestamp.tar.gz
@@ -45,6 +45,7 @@ docker run -it sampling-timestamp bash
 ### Demo experiments
 
 There are some small demo experiments under the `demo` directory.
+
 
 #### Demo Experiment 1: Performance
 
@@ -81,6 +82,9 @@ grep 75th tpch/*/*summary.json
 For throughput, higher means faster, which means performs better. For latency, lower is better.
 In accordance with our evaluation results in Section 6.2.2, the performance of SU and SO should be better than ST.
 
+Note: Generally, the performance results should be reproducible on any computer, either a high-performance server or just a typical laptop.
+Please see the [troubleshooting](#troubleshooting) section for more information if you cannot reproduce the results.
+
 
 #### Demo Experiment 2: Number of data races
 
@@ -101,9 +105,9 @@ To easily get the results, you may run the following one-liner.
 grep warnings tatp/*/*.log
 ```
 
-Note that this demo run is too short and will not be able to reproduce the results discussed in the paper.
-This is because we are randomly sampling 0.3% of the read/write events, and only after running for a long time (e.g. 1 hour),
-when a huge number of events are encountered, will the number of data races detected be meaningful for comparison.
+Note: This demo run is too short and will not be able to reproduce the results discussed in the paper.
+This is because we are randomly sampling 0.3% of the read/write events, and it is only after running for a long time (e.g. 1 hour),
+that when a huge number of events are encountered, will the number of data races detected be meaningful for comparison.
 
 
 #### Demo Experiment 3: Profiling
@@ -125,11 +129,32 @@ Similar to above, the results for each run are stored in their corresponding fol
 The profiling results are stored in a file whose name starts with the time of the run and ends with ".log".
 
 In the results, you can find counters such as number of locks or number of accesses encountered.
-In the results for SU, you can also find the number of acquires encountered (`[UCLOCKS] Num original acquires`) and the number of acquires that our implementation needed to process (`[UCLOCKS] Num uclock acquires`). This lets us compute the ratio between amount of work "seen" vs amount of work "actually done". Notice that our algorithm only needed to process around 50% of the acquires encountered.
-Likewise, in the results for SO, you can also find the number of acquires encountered (`[OL] Num acquires`) and the number of linked-list traversals taken (`[OL] Num acquire ll traverses`). Notice that only a small number of linked-list traversals is needed per acquire that is encountered.
+In the results for SU, you can also find the number of acquires encountered (`[UCLOCKS] Num original acquires`) and the number of acquires that our implementation needed to process (`[UCLOCKS] Num uclock acquires`). This lets us compute the ratio between amount of work "seen" vs amount of work "actually done". Under most benchmarks, our algorithm only needs to process around 50% of the acquires encountered.
+Likewise, in the results for SO, you can also find the number of acquires encountered (`[OL] Num acquires`) and the number of linked-list traversals taken (`[OL] Num acquire ll traverses`). Under most benchmarks, only a small number of linked-list traversals is needed per acquire that is encountered.
+
+Note: If the ratio of work done vs work encountered is too different from those discussed in the paper, that could be due to MySQL Server hitting its
+saturation point, being too overloaded with requests.
+Threads might spend a lot of time trying to acquire a lock but failing, or many threads do not make much progress while a single thread progresses a lot.
+In both cases, the ratio will be affected because the frequency of synchronization between threads will be different; higher in the former, lower in the latter.
+Please refer to the guide in the [troubleshooting](#troubleshooting) section for more information.
 
 
 ### Troubleshooting
+
+#### Inconsistent results on a cluster
+
+We have observed inconsistent performance when running the experiments on a HPC cluster.
+We suspect that this is due to high variance in the response latency of the filesystem shared by a huge number of users,
+which has a big impact on our experiments especially as a DBMS benchmark involves very frequent file I/O operations.
+
+#### Noisy results due to high resource contention
+
+If the experiment results that you obtain are too different from those discussed in the paper, that could be due to MySQL Server hitting its
+saturation point, being too overloaded with requests.
+When that happens, there will be high contention on system resources such as locks, CPU time, or IO resources, causing many threads to just spend time waiting instead of doing work.
+To remedy this situation, you may reduce the number of terminals spawned by BenchBase. Please refer to the guide in the [Customize configuration section](#customize-configuration) to do so.
+
+#### Terminating the experiment
 
 If you stop the experiment by pressing Ctrl+C, the processes `mysqld` and `benchbase.jar` might not be terminated properly.
 You can just enter `kill -9 $(pidof mysqld java)` to kill them before starting the next experiment.
@@ -293,8 +318,8 @@ All you need to do is:
 
 #### Example
 
-For example, I modified TSan with a new implementation and tagged it with `daniel-fast` in my fork of llvm-project at https://github.com/dwslim/llvm-project.
-Below are the steps to build it.
+For example, consider the scenario where I modified TSan with a new implementation and tagged it with `daniel-fast` in my fork of llvm-project at https://github.com/dwslim/llvm-project.
+Below are the steps to build MySQL with it.
 
 1. Switch to `root` user.
   * `su - root` (password is `root`)
@@ -308,4 +333,128 @@ Below are the steps to build it.
 4. Run the script.
   * `/usr/local/experiments/2-mysql/5-build-all.sh`
 
-(Admittedly, this can be more streamlined by providing the `build` command to the shell, but rebuilding the container and publishing to Zenodo takes quite long. Will do so in a later revision.)
+
+### Using the container like a virtual machine
+
+In the guide above, we used `docker run` to start the container and open a shell to interact with it.
+However, once the shell is closed, everything will be lost.
+
+If you want the session to persist, you may start the container in detached mode.
+
+```sh
+docker run --detach -it --name experiment-box sampling-timestamp bash
+```
+
+You can run `docker ps` to see the running containers.
+
+```sh
+$ sudo docker ps
+CONTAINER ID   IMAGE                COMMAND   CREATED          STATUS          PORTS     NAMES
+da28c56dfea7   sampling-timestamp   "bash"    13 seconds ago   Up 12 seconds             experiment-box
+```
+
+Then, run `docker exec` to open a bash shell to interact with the container.
+
+```sh
+docker exec -it experiment-box bash
+```
+
+Notice that after closing the shell and opening a new one with `docker exec`, your changes persist.
+
+Finally, run `docker stop` to stop the container if you are done with your experiments.
+
+```sh
+docker stop experiment-box
+```
+
+Note that even after stopping the container, you can still restart it with `docker start`, and your changes still persist!
+
+```sh
+docker start experiment-box
+```
+
+When you are finally done with the experiments and want to free up space, you may run `docker rm` to remove the container for good.
+
+```sh
+docker rm experiment-box
+```
+
+
+## Extending this setup for more experiments
+
+If you would like to extend this Docker image with your own MySQL builds for further experiments, here are some pieces of useful information.
+
+### Program locations
+
+The experiment programs are stored in /usr/local/experiment, and can only be modified by the `root` user,
+while a shell opened in the container will always run as the `experiment` user.
+This prevents accidental modification of the program files.
+
+The key locations are as follows, each of which are also stored in an environment variable:
+- LLVM (`$LLVM`): /usr/local/experiment/llvm-project
+- MySQL (`$MYSQL`): /usr/local/experiment/mysql-server-mysql-8.0.39
+- BenchBase (`$BENCHBASE`): /usr/local/experiment/benchbase
+- JDK (`$JAVA_HOME`): /usr/local/experiment/jdk-21
+- Scripts used to build this Docker image: /usr/local/experiment/build-scripts
+
+### Build
+
+Generally, you might only need to build different versions of MySQL with your modified TSan implementations.
+To do so, you can refer to the instructions in the [Build your own MySQL](#build-your-own-mysql) section.
+
+To create your own Docker image with these changes, you can create a Dockerfile that looks like the following:
+
+```
+FROM dwslim2/sampling-timestamp:latest
+
+USER root
+WORKDIR /usr/local/experiment
+# COPY your files.
+# RUN commands to set up your experiments.
+
+USER experiment
+# Change the user back to `experiment` so that the container will open a shell as this user.
+```
+
+You may refer to the Dockerfile that was used to create this Docker image.
+
+When the Dockerfile is ready, you can build it by running `docker build`.
+
+```
+docker build . -t your-tag-name
+```
+
+### Publish to Docker Hub
+
+After building the image, you can push it to Docker Hub so that you or others do not need to build it again (like what I have done!).
+
+First, you need to login to Docker Hub.
+
+```
+docker login
+```
+
+Then, you must tag your image with your username and your repository name on Docker Hub.
+For example,
+
+```
+docker tag sampling-timestamp dwslim2/sampling-timestamp
+```
+
+Finally, you can push it to DockerHub.
+
+```
+docker push dwslim2/sampling-timestamp
+```
+
+If you get an error when pushing, you may need to run `docker login` with `sudo`.
+
+
+### Save image to a tar archive
+
+You might also want to save the image to a tar.gz archive, and then upload it to Zenodo.
+You can do so with `docker save`.
+
+```sh
+docker save sampling-timestamp:latest | gzip > sampling-timestamp.tar.gz
+```
